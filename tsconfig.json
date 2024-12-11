@@ -7,5 +7,5 @@
     "allowSyntheticDefaultImports": true,
     "exactOptionalPropertyTypes": false,
     "module": "commonjs"
-  },
+  }
 }

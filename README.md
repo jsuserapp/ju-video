@@ -1,3 +1,4 @@
+video server ui project
 # Quasar App (ju-video)
 
 A Quasar Project
@@ -39,3 +40,4 @@ quasar build
 
 ### Customize the configuration
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+# ju-video
