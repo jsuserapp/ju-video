@@ -1,1 +1,45 @@
 // app global css in SCSS form
+html,
+body,
+#q-app {
+  width: 100%;
+  height: 100%;
+  direction: ltr;
+}
+.group-title {
+  font-size: 20px;
+  color: grey;
+}
+.btn-blue {
+  background-color: $btn-blue;
+  color: white;
+}
+.q-field__native,
+.q-field__prefix,
+.q-field__suffix,
+.q-field__input {
+  &::-webkit-input-placeholder {
+    /* WebKit browsers */
+    color: $placeholder;
+  }
+  &:-moz-placeholder {
+    /* Mozilla Firefox 4 to 18 */
+    color: $placeholder;
+    opacity: 1; /* Firefox 4 to 18 */
+  }
+  &::-moz-placeholder {
+    /* Mozilla Firefox 19+ */
+    color: $placeholder;
+    opacity: 1; /* Firefox 19+ */
+  }
+  &:-ms-input-placeholder {
+    /* Internet Explorer 10-11 */
+    color: $placeholder;
+  }
+}
+.q-btn {
+  font-size: 20px;
+}
+.q-field {
+  font-size: 20px;
+}
