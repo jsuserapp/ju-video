@@ -1,6 +1,6 @@
 # Video UI
 
-这个项目是 `https://github.com/jsuserapp/video-serv` 项目的网页 UI 项目
+这个项目是 `https://github.com/jsuserapp/video-serv` 项目的网页 UI 项目, 基于 quasar 和 vue 3
 
 build 安装到 video-serv 的 html 目录下
 
