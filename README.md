@@ -1,12 +1,11 @@
-video server ui project
-# Quasar App (ju-video)
+# Video UI
 
-A Quasar Project
+这个项目是 `https://github.com/jsuserapp/video-serv` 项目的网页 UI 项目
 
-## Install the dependencies
+build 安装到 video-serv 的 html 目录下
+
+### Install the dependencies
 ```bash
-yarn
-# or
 npm install
 ```
 
@@ -15,29 +14,9 @@ npm install
 quasar dev
 ```
 
-
-### Lint the files
-```bash
-yarn lint
-# or
-npm run lint
-```
-
-
-### Format the files
-```bash
-yarn format
-# or
-npm run format
-```
-
-
-
 ### Build the app for production
 ```bash
 quasar build
 ```
 
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
-# ju-video
+Windows 下开发可以直接运行 cmd 目录下的 dev.cmd 和 build.cmd 执行开发和编译.
