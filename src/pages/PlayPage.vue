@@ -1,9 +1,8 @@
 <template>
   <div class="page">
     <div class="title">{{ title }}</div>
-    <div class="video-container" :style="{ width: containerWidth + 'px', height: containerHeight + 'px' }">
-      <!-- Video.js 播放器 -->
-      <video ref="videoPlayer" id="video-player" class="video-js vjs-fluid vjs-default-skin" data-setup='{"fluid": true}' controls preload="auto">
+    <div v-if="reload" class="video-container" :style="{ width: containerWidth + 'px', height: containerHeight + 'px' }">
+      <video ref="videoPlayer" class="video-js vjs-fluid vjs-default-skin" data-setup='{"fluid": true}' controls preload="auto">
         <source :src="videoSrc" type="video/mp4" />
         <source :src="videoSrc" type="video/x-matroska" />
         <source :src="videoSrc" type="video/webm" />
@@ -31,8 +30,11 @@ import { useRoute, useRouter } from 'vue-router';
 const $q = useQuasar();
 const route = useRoute();
 const router = useRouter();
+
 let path = '' + route.params.path;
 const hash = '' + route.params.hash;
+const reload = ref(true);
+const videoPlayer = ref(null);
 const videoSrc = ref(`/video/${hash}/${encodeURIComponent(path)}`); // 替换为你的视频链接
 const containerWidth = ref(1024);
 const containerHeight = ref(768);
@@ -42,24 +44,23 @@ const title = ref('');
 const play_position = ref(0);
 const items = ref<VideoInfo[]>([]);
 
-if (paths.length > 0) {
-  title.value = paths[paths.length - 1]!;
-} else {
-  title.value = '缺少视频';
+function setTitle() {
+  if (paths.length > 0) {
+    title.value = paths[paths.length - 1]!;
+  } else {
+    title.value = '缺少视频';
+  }
+  document.title = title.value;
 }
-document.title = title.value;
-
-function initPlayer() {
-  player = videojs('video-player', {
+setTitle();
+function initPlayer(fromNext: boolean) {
+  player = videojs(videoPlayer.value!, {
     autoplay: true,
     controls: true,
     preload: 'auto',
   });
   player.on('play', () => {
     console.log('视频开始播放');
-    const videoWidth = player?.videoWidth(); // 获取视频的原始宽度
-    const videoHeight = player?.videoHeight(); // 获取视频的原始高度
-    console.log(videoHeight, videoWidth);
   });
   player.on('pause', () => {
     console.log('视频暂停');
@@ -69,7 +70,9 @@ function initPlayer() {
     playNext();
   });
   player.ready(() => {
-    reqVideoPosition();
+    if (!fromNext) {
+      reqVideoPosition();
+    }
     setVideoSize();
   });
 }
@@ -80,11 +83,18 @@ function playNext() {
   }
   const nextItem = items.value[playIndex + 1]!;
   videoSrc.value = `/video/${nextItem.hash}/${encodeURIComponent(nextItem.path)}`;
-  router.push(`/play/${nextItem.hash}/${encodeURIComponent(nextItem.path)}`);
+  const url = `/play/${nextItem.hash}/${encodeURIComponent(nextItem.path)}`;
+  router.push(url);
   path = nextItem.path;
   title.value = nextItem.name;
-  player?.currentTime(0);
-  player?.play();
+  document.title = title.value;
+  reload.value = false;
+  setTimeout(() => {
+    reload.value = true;
+    setTimeout(() => {
+      initPlayer(true);
+    }, 1000);
+  }, 1000);
 }
 function setVideoSize() {
   const inter = setInterval(() => {
@@ -111,6 +121,7 @@ function reqVideoPosition() {
     if (rd.error) {
       notifyError($q, rd.error);
     } else {
+      console.log(rd.position);
       player?.currentTime(rd.position || 0);
     }
   });
@@ -126,8 +137,10 @@ function reqVideoPositionSave() {
 }
 function reqVideoList() {
   const pos = path.lastIndexOf('\\');
-  if (pos === -1) return;
-  const parent = path.substring(0, pos);
+  let parent = '';
+  if (pos !== -1) {
+    parent = path.substring(0, pos);
+  }
   api.post('video/list', { hash: hash, path: parent }).then((rsp) => {
     const rd = rsp.data;
     if (rd.error) {
@@ -151,7 +164,7 @@ onMounted(() => {
   reqVideoList();
   window.addEventListener('beforeunload', handleBeforeUnload);
   window.addEventListener('resize', updateHeight);
-  initPlayer();
+  initPlayer(false);
   updateHeight();
 });
 const handleBeforeUnload = () => {
