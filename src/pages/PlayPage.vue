@@ -1,6 +1,11 @@
 <template>
   <div class="page">
-    <div class="title">{{ title }}</div>
+    <div class="title">
+      {{ title }}
+      <span :class="stopInterval === null ? 'text-grey' : 'text-green'" style="font-size: 16px"
+        >{{ stopInterval === null ? '已禁用' : '已启用' }}跳过片头片尾</span
+      >
+    </div>
     <div v-if="reload" class="video-container" :style="{ width: containerWidth + 'px', height: containerHeight + 'px' }">
       <video ref="videoPlayer" class="video-js vjs-fluid vjs-default-skin" data-setup='{"fluid": true}' controls preload="auto">
         <source :src="videoSrc" type="video/mp4" />
@@ -42,6 +47,7 @@ let player: Player | null = null;
 const paths = path.split('\\');
 const title = ref('');
 const play_position = ref(0);
+const jump_position = ref<{ start: number; end: number }>({ start: 0, end: 0 });
 const items = ref<VideoInfo[]>([]);
 
 function setTitle() {
@@ -60,17 +66,19 @@ function initPlayer(fromNext: boolean) {
     preload: 'auto',
   });
   player.on('play', () => {
-    console.log('视频开始播放');
+    //console.log('视频开始播放');
   });
   player.on('pause', () => {
-    console.log('视频暂停');
+    //console.log('视频暂停');
   });
   player.on('ended', () => {
-    console.log('视频播放结束');
+    //console.log('视频播放结束');
     playNext();
   });
   player.ready(() => {
-    if (!fromNext) {
+    if (fromNext) {
+      player?.currentTime(jump_position.value.start);
+    } else {
       reqVideoPosition();
     }
     setVideoSize();
@@ -93,8 +101,8 @@ function playNext() {
     reload.value = true;
     setTimeout(() => {
       initPlayer(true);
-    }, 1000);
-  }, 1000);
+    }, 100);
+  }, 100);
 }
 function setVideoSize() {
   const inter = setInterval(() => {
@@ -115,13 +123,23 @@ function setVideoSize() {
     }
   }, 50);
 }
+function reqPlayPosition() {
+  api.post('play/position').then((rsp) => {
+    const rd = rsp.data;
+    if (rd.error) {
+      notifyError($q, rd.error);
+    } else {
+      jump_position.value = rd.play_position;
+      setStopInterval();
+    }
+  });
+}
 function reqVideoPosition() {
   api.post('video/position', { hash: hash, path: path }).then((rsp) => {
     const rd = rsp.data;
     if (rd.error) {
       notifyError($q, rd.error);
     } else {
-      console.log(rd.position);
       player?.currentTime(rd.position || 0);
     }
   });
@@ -156,7 +174,29 @@ function reqVideoList() {
     }
   });
 }
-
+let stopInterval: NodeJS.Timeout | null = null;
+function setStopInterval() {
+  if (stopInterval) {
+    return;
+  }
+  stopInterval = setInterval(() => {
+    if (jump_position.value.end == 0) {
+      return;
+    }
+    const duration = player?.duration();
+    if (!duration) {
+      return;
+    }
+    const position = player?.currentTime();
+    if (!position) {
+      return;
+    }
+    if (position + jump_position.value.end >= duration) {
+      player?.pause();
+      playNext();
+    }
+  }, 1000);
+}
 const updateHeight = () => {
   setVideoSize();
 };
@@ -166,6 +206,7 @@ onMounted(() => {
   window.addEventListener('resize', updateHeight);
   initPlayer(false);
   updateHeight();
+  reqPlayPosition();
 });
 const handleBeforeUnload = () => {
   reqVideoPositionSave();
@@ -174,6 +215,10 @@ onBeforeUnmount(() => {
   if (player) {
     player.dispose();
     player = null;
+  }
+  if (stopInterval) {
+    clearInterval(stopInterval);
+    stopInterval = null;
   }
   window.removeEventListener('resize', updateHeight);
   window.removeEventListener('beforeunload', handleBeforeUnload);
